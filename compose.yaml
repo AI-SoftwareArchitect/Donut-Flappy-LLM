@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+  cassandra:
+    image: cassandra:4.1
+    container_name: cassandra
+    restart: unless-stopped
+    environment:
+      - CASSANDRA_CLUSTER_NAME=RAGCluster
+      - CASSANDRA_DC=DC1
+      - CASSANDRA_RACK=RACK1
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+      - CASSANDRA_START_RPC=true
+      - CASSANDRA_USER=cassandra
+      - CASSANDRA_PASSWORD=cassandra
+    ports:
+      - "9042:9042"    # CQL port (driver bağlantısı)
+      - "9160:9160"    # Thrift (genelde gerekli değil ama açık bırakabilirsin)
+    volumes:
+      - ./data/cassandra:/var/lib/cassandra
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -u cassandra -p cassandra -e 'SELECT now() FROM system.local;'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
