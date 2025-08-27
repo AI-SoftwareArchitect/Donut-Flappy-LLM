@@ -1,5 +1,5 @@
 # Donut-Flappy-LLM
-DonutFlappyLLM🍩 is an ai agent with cassandra rag implementation. Developed for B2B company chatting.
+DonutFlappyLLM🍩 is an ai agent with cassandra rag implementation. Developed for B2B communication.
 
 # RAG API - Retrieval-Augmented Generation System
 
