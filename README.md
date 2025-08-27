@@ -1,32 +1,38 @@
 # Donut-Flappy-LLM
 DonutFlappyLLM🍩 is an ai agent with cassandra rag implementation. Developed for B2B company chatting.
 
-A production-ready RAG (Retrieval-Augmented Generation) API built with FastAPI, Apache Cassandra, and Ollama for scalable document ingestion, semantic search, and AI-powered chat capabilities.
-🌟 Features
+# RAG API - Retrieval-Augmented Generation System
 
-Document Ingestion: Upload and process documents with automatic chunking and embedding
-Semantic Search: Vector-based similarity search using cosine similarity
-AI Chat: Context-aware responses using local LLM (Ollama)
-Scalable Storage: Apache Cassandra for distributed vector storage
-Real-time Streaming: Server-sent events for streaming responses
-Rate Limiting: Built-in rate limiting with IP-based throttling
-Authentication: API key-based security
-Health Monitoring: Health check endpoints for monitoring
+A production-ready RAG (Retrieval-Augmented Generation) API built with **FastAPI**, **Apache Cassandra**, and **Ollama** for scalable document ingestion, semantic search, and AI-powered chat capabilities.
 
-📋 Table of Contents
+## 🌟 Features
 
-Architecture
-Installation
-Configuration
-API Endpoints
-Usage Examples
-Performance
-Monitoring
-Troubleshooting
+- **Document Ingestion**: Upload and process documents with automatic chunking and embedding
+- **Semantic Search**: Vector-based similarity search using cosine similarity
+- **AI Chat**: Context-aware responses using local LLM (Ollama)
+- **Scalable Storage**: Apache Cassandra for distributed vector storage
+- **Real-time Streaming**: Server-sent events for streaming responses
+- **Rate Limiting**: Built-in rate limiting with IP-based throttling
+- **Authentication**: API key-based security
+- **Health Monitoring**: Health check endpoints for monitoring
 
-🏗️ Architecture
-High Level Design (HLD)
-mermaidgraph TB
+## 📋 Table of Contents
+
+- [Architecture](#architecture)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [API Endpoints](#api-endpoints)
+- [Usage Examples](#usage-examples)
+- [Performance](#performance)
+- [Monitoring](#monitoring)
+- [Troubleshooting](#troubleshooting)
+
+## 🏗️ Architecture
+
+### High Level Design (HLD)
+
+```mermaid
+graph TB
     subgraph "Client Layer"
         Client[Client Applications]
         WebUI[Web UI]
@@ -88,9 +94,14 @@ mermaidgraph TB
     IngestService --> ThreadPool
     ChatService --> ThreadPool
     EmbedService --> HTTPClient
-Low Level Design (LLD)
-1. Data Flow Architecture
-mermaidsequenceDiagram
+```
+
+### Low Level Design (LLD)
+
+#### 1. Data Flow Architecture
+
+```mermaid
+sequenceDiagram
     participant C as Client
     participant API as FastAPI
     participant Auth as Auth Guard
@@ -129,8 +140,12 @@ mermaidsequenceDiagram
     API->>Thread: execute(chat, contexts+query)
     Thread->>Ollama: POST /api/chat (stream)
     Ollama-->>C: Server-Sent Events
-2. Database Schema Design
-sql-- Keyspace
+```
+
+#### 2. Database Schema Design
+
+```sql
+-- Keyspace
 CREATE KEYSPACE ragks 
 WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
 
@@ -152,8 +167,12 @@ CREATE TABLE chunks (
   embedding list<float>,   -- Vector embedding (384 dimensions)
   PRIMARY KEY ((namespace), doc_id, chunk_id)
 ) WITH CLUSTERING ORDER BY (doc_id ASC, chunk_id ASC);
-3. Component Architecture
-mermaidclassDiagram
+```
+
+#### 3. Component Architecture
+
+```mermaid
+classDiagram
     class FastAPIApp {
         +Router router
         +Middleware[] middleware
@@ -208,8 +227,12 @@ mermaidclassDiagram
     FastAPIApp --> RateLimiter
     FastAPIApp --> ChunkingService
     FastAPIApp --> VectorMath
-4. Vector Search Algorithm
-pythondef select_context(namespace: str, query_vector: List[float], top_k: int) -> List[Tuple[float, str]]:
+```
+
+#### 4. Vector Search Algorithm
+
+```python
+def select_context(namespace: str, query_vector: List[float], top_k: int) -> List[Tuple[float, str]]:
     """
     Brute-force cosine similarity search
     Time Complexity: O(n * d) where n=chunks, d=dimensions
@@ -228,56 +251,76 @@ pythondef select_context(namespace: str, query_vector: List[float], top_k: int) 
     # 3. Sort by similarity (descending) and return top-k
     scored.sort(key=lambda x: x[0], reverse=True)
     return scored[:top_k]
-System Characteristics
-AspectImplementationTrade-offsConsistencyCassandra QUORUMStrong consistency vs availabilityScalabilityHorizontal (add nodes)Linear scaling with some overheadPerformanceIn-memory similarityFast search, memory boundedDurabilityCassandra replicationData safety vs write latencyAvailabilitySingle point of failureSimple deployment vs HA
-🚀 Installation
-Prerequisites
+```
 
-Python 3.11+
-Apache Cassandra 4.0+ or DataStax Astra
-Ollama with models installed
-Docker (optional)
+### System Characteristics
 
-Quick Start
+| Aspect | Implementation | Trade-offs |
+|--------|---------------|------------|
+| **Consistency** | Cassandra QUORUM | Strong consistency vs availability |
+| **Scalability** | Horizontal (add nodes) | Linear scaling with some overhead |
+| **Performance** | In-memory similarity | Fast search, memory bounded |
+| **Durability** | Cassandra replication | Data safety vs write latency |
+| **Availability** | Single point of failure | Simple deployment vs HA |
 
-Clone the repository
+## 🚀 Installation
 
-bashgit clone https://github.com/yourusername/rag-api.git
+### Prerequisites
+
+- **Python 3.11+**
+- **Apache Cassandra 4.0+** or **DataStax Astra**
+- **Ollama** with models installed
+- **Docker** (optional)
+
+### Quick Start
+
+1. **Clone the repository**
+```bash
+git clone https://github.com/yourusername/rag-api.git
 cd rag-api
+```
 
-Install dependencies
-
-bashpython -m venv .venv
+2. **Install dependencies**
+```bash
+python -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install -r requirements.txt
+```
 
-Install Ollama and models
-
-bash# Install Ollama
+3. **Install Ollama and models**
+```bash
+# Install Ollama
 curl -fsSL https://ollama.com/install.sh | sh
 
 # Download required models
 ollama pull nomic-embed-text    # Embedding model (274MB)
 ollama pull qwen3:0.6b         # Chat model (396MB)
+```
 
-Start Cassandra
-
-bash# Using Docker
+4. **Start Cassandra**
+```bash
+# Using Docker
 docker run --name cassandra -p 9042:9042 -d cassandra:4.1
 
 # Or install locally
 # https://cassandra.apache.org/doc/latest/getting_started/installing.html
+```
 
-Configure environment
-
-bashcp .env.example .env
+5. **Configure environment**
+```bash
+cp .env.example .env
 # Edit .env with your settings
+```
 
-Start the API
+6. **Start the API**
+```bash
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
 
-bashuvicorn main:app --host 0.0.0.0 --port 8000 --reload
-Docker Deployment
-yaml# docker-compose.yml
+### Docker Deployment
+
+```yaml
+# docker-compose.yml
 version: '3.8'
 services:
   cassandra:
@@ -317,10 +360,16 @@ services:
 volumes:
   cassandra_data:
   ollama_data:
-⚙️ Configuration
-Environment Variables
-Create a .env file:
-bash# API Security
+```
+
+## ⚙️ Configuration
+
+### Environment Variables
+
+Create a `.env` file:
+
+```bash
+# API Security
 API_KEY=your-super-secret-api-key-here
 
 # Ollama Configuration
@@ -343,15 +392,37 @@ HTTP_TIMEOUT_S=60          # HTTP request timeout
 
 # Rate Limiting
 RATE_LIMIT_PER_MINUTE=120  # Requests per minute per IP
-Model Selection Guide
-ModelSizeSpeedQualityUse CaseEmbedding Modelsnomic-embed-text274MBFastGoodGeneral purposemxbai-embed-large669MBMediumBetterHigh quality embeddingsall-minilm23MBVery FastBasicResource constrainedChat Modelsqwen3:0.6b396MBVery FastBasicQuick responsesllama3:8b4.7GBMediumGoodBalanced performancemistral:7b4.1GBMediumGoodCode & reasoning
-📡 API Endpoints
-Authentication
-All endpoints require X-API-Key header:
-bashcurl -H "X-API-Key: your-api-key" http://localhost:8000/endpoint
-Core Endpoints
-1. Document Ingestion
-httpPOST /ingest
+```
+
+### Model Selection Guide
+
+| Model | Size | Speed | Quality | Use Case |
+|-------|------|--------|---------|----------|
+| **Embedding Models** |
+| `nomic-embed-text` | 274MB | Fast | Good | General purpose |
+| `mxbai-embed-large` | 669MB | Medium | Better | High quality embeddings |
+| `all-minilm` | 23MB | Very Fast | Basic | Resource constrained |
+| **Chat Models** |
+| `qwen3:0.6b` | 396MB | Very Fast | Basic | Quick responses |
+| `llama3:8b` | 4.7GB | Medium | Good | Balanced performance |
+| `mistral:7b` | 4.1GB | Medium | Good | Code & reasoning |
+
+## 📡 API Endpoints
+
+### Authentication
+
+All endpoints require `X-API-Key` header:
+
+```bash
+curl -H "X-API-Key: your-api-key" http://localhost:8000/endpoint
+```
+
+### Core Endpoints
+
+#### 1. Document Ingestion
+
+```http
+POST /ingest
 Content-Type: application/json
 X-API-Key: your-api-key
 
@@ -365,14 +436,21 @@ X-API-Key: your-api-key
     "category": "documentation"
   }
 }
-Response:
-json{
+```
+
+**Response:**
+```json
+{
   "ok": true,
   "doc_id": "user-manual-v1",
   "chunks": 15
 }
-2. Chat (Streaming)
-httpPOST /chat
+```
+
+#### 2. Chat (Streaming)
+
+```http
+POST /chat
 Content-Type: application/json
 X-API-Key: your-api-key
 
@@ -382,9 +460,14 @@ X-API-Key: your-api-key
   "top_k": 3,
   "stream": true
 }
-Response: Server-sent events stream
-3. Chat (Non-streaming)
-httpPOST /chat
+```
+
+**Response:** Server-sent events stream
+
+#### 3. Chat (Non-streaming)
+
+```http
+POST /chat
 Content-Type: application/json
 X-API-Key: your-api-key
 
@@ -394,20 +477,30 @@ X-API-Key: your-api-key
   "top_k": 5,
   "stream": false
 }
-Response:
-json{
+```
+
+**Response:**
+```json
+{
   "answer": "Based on the documentation, the system requirements are...",
   "contexts": [
     "System Requirements: - Python 3.11+...",
     "Hardware: Minimum 4GB RAM..."
   ]
 }
-4. Document Management
-Get document info:
-httpGET /document/{namespace}/{doc_id}
+```
+
+#### 4. Document Management
+
+**Get document info:**
+```http
+GET /document/{namespace}/{doc_id}
 X-API-Key: your-api-key
-Delete document:
-httpDELETE /document
+```
+
+**Delete document:**
+```http
+DELETE /document
 Content-Type: application/json
 X-API-Key: your-api-key
 
@@ -415,28 +508,43 @@ X-API-Key: your-api-key
   "doc_id": "user-manual-v1",
   "namespace": "support-docs"
 }
-5. Health Check
-httpGET /health
-Response:
-json{
+```
+
+#### 5. Health Check
+
+```http
+GET /health
+```
+
+**Response:**
+```json
+{
   "status": "ok",
   "timestamp": 1703123456.789
 }
-Error Responses
-json{
+```
+
+### Error Responses
+
+```json
+{
   "detail": "Rate limit exceeded"
 }
+```
+
 Common HTTP status codes:
+- `400` - Bad Request (invalid input)
+- `401` - Unauthorized (missing/invalid API key)
+- `404` - Not Found (document doesn't exist)
+- `429` - Too Many Requests (rate limited)
+- `500` - Internal Server Error
 
-400 - Bad Request (invalid input)
-401 - Unauthorized (missing/invalid API key)
-404 - Not Found (document doesn't exist)
-429 - Too Many Requests (rate limited)
-500 - Internal Server Error
+## 💡 Usage Examples
 
-💡 Usage Examples
-Python Client
-pythonimport requests
+### Python Client
+
+```python
+import requests
 import json
 
 class RAGClient:
@@ -487,8 +595,12 @@ for token in client.chat("How to reset password?", namespace="support", stream=T
 # Chat without streaming
 response = client.chat("How to reset password?", namespace="support", stream=False)
 print(response["answer"])
-JavaScript/Node.js Client
-javascriptclass RAGClient {
+```
+
+### JavaScript/Node.js Client
+
+```javascript
+class RAGClient {
     constructor(baseUrl, apiKey) {
         this.baseUrl = baseUrl.replace(/\/$/, '');
         this.headers = {
@@ -544,9 +656,13 @@ await client.ingestDocument('manual-v2', 'User manual content...', 'docs');
 
 // Stream chat
 await client.chatStream('How to use the API?', 'docs');
-cURL Examples
-Bulk document ingestion:
-bash#!/bin/bash
+```
+
+### cURL Examples
+
+**Bulk document ingestion:**
+```bash
+#!/bin/bash
 
 API_KEY="your-api-key"
 BASE_URL="http://localhost:8000"
@@ -567,8 +683,11 @@ for file in docs/*.txt; do
     
     echo "Ingested: $doc_id"
 done
-Interactive chat session:
-bash#!/bin/bash
+```
+
+**Interactive chat session:**
+```bash
+#!/bin/bash
 
 API_KEY="your-api-key"
 BASE_URL="http://localhost:8000"
@@ -592,39 +711,54 @@ while true; do
     
     echo ""
 done
-⚡ Performance
-Benchmarks
-Hardware: 16GB RAM, 8-core CPU, SSD
-OperationDocumentsChunksTimeThroughputIngestion1,00050,00045s22 docs/sSearch-50,000120ms8.3 searches/sEmbedding1,000 texts-15s67 embeds/s
-Scaling Guidelines
-Vertical Scaling (Single Node):
+```
 
-CPU: 8+ cores for parallel embedding
-RAM: 8GB + (embedding_dim × num_chunks × 4 bytes)
-Storage: SSD for Cassandra data
+## ⚡ Performance
 
-Horizontal Scaling (Multi-Node):
+### Benchmarks
 
-Cassandra: Add nodes for storage scaling
-API Servers: Load balance multiple FastAPI instances
-Ollama: Dedicated GPU servers for models
+**Hardware:** 16GB RAM, 8-core CPU, SSD
 
-Memory Usage Estimation:
-python# For nomic-embed-text (384 dimensions)
+| Operation | Documents | Chunks | Time | Throughput |
+|-----------|-----------|---------|------|------------|
+| Ingestion | 1,000 | 50,000 | 45s | 22 docs/s |
+| Search | - | 50,000 | 120ms | 8.3 searches/s |
+| Embedding | 1,000 texts | - | 15s | 67 embeds/s |
+
+### Scaling Guidelines
+
+**Vertical Scaling (Single Node):**
+- **CPU**: 8+ cores for parallel embedding
+- **RAM**: 8GB + (embedding_dim × num_chunks × 4 bytes)
+- **Storage**: SSD for Cassandra data
+
+**Horizontal Scaling (Multi-Node):**
+- **Cassandra**: Add nodes for storage scaling
+- **API Servers**: Load balance multiple FastAPI instances
+- **Ollama**: Dedicated GPU servers for models
+
+**Memory Usage Estimation:**
+```python
+# For nomic-embed-text (384 dimensions)
 memory_mb = (num_chunks * 384 * 4) / (1024 * 1024)
 
 # Example: 1M chunks = ~1.5GB RAM
-Optimization Tips
+```
 
-Batch Processing: Use embed_many() for multiple documents
-Connection Pooling: Configure Cassandra connection pools
-Model Caching: Keep Ollama models loaded in memory
-Async Operations: Use ThreadPoolExecutor for I/O
-Chunking Strategy: Optimize chunk size for your use case
+### Optimization Tips
 
-📊 Monitoring
-Metrics Collection
-python# Add to main.py for basic metrics
+1. **Batch Processing**: Use `embed_many()` for multiple documents
+2. **Connection Pooling**: Configure Cassandra connection pools
+3. **Model Caching**: Keep Ollama models loaded in memory
+4. **Async Operations**: Use ThreadPoolExecutor for I/O
+5. **Chunking Strategy**: Optimize chunk size for your use case
+
+## 📊 Monitoring
+
+### Metrics Collection
+
+```python
+# Add to main.py for basic metrics
 import time
 import logging
 from collections import defaultdict
@@ -655,8 +789,12 @@ async def get_metrics():
         }
         for endpoint, times in metrics.items()
     }
-Health Checks
-bash# Basic health check
+```
+
+### Health Checks
+
+```bash
+# Basic health check
 curl http://localhost:8000/health
 
 # Advanced health check with monitoring
@@ -673,8 +811,12 @@ check_health() {
         return 1
     fi
 }
-Log Configuration
-pythonimport logging
+```
+
+### Log Configuration
+
+```python
+import logging
 
 # Configure logging
 logging.basicConfig(
@@ -696,12 +838,19 @@ async def add_request_id(request: Request, call_next):
     response.headers["X-Request-ID"] = request_id
     
     return response
-🔧 Troubleshooting
-Common Issues
-1. Cassandra Connection Issues
-Problem: NoHostAvailable: Unable to connect to any servers
-Solutions:
-bash# Check Cassandra status
+```
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+#### 1. Cassandra Connection Issues
+
+**Problem:** `NoHostAvailable: Unable to connect to any servers`
+
+**Solutions:**
+```bash
+# Check Cassandra status
 docker logs cassandra
 # or
 sudo systemctl status cassandra
@@ -714,10 +863,15 @@ sudo ufw allow 9042
 
 # Verify configuration
 grep -r "rpc_address\|listen_address" /etc/cassandra/
-2. Ollama Model Issues
-Problem: Model not found or slow responses
-Solutions:
-bash# List installed models
+```
+
+#### 2. Ollama Model Issues
+
+**Problem:** `Model not found` or slow responses
+
+**Solutions:**
+```bash
+# List installed models
 ollama list
 
 # Download missing models
@@ -729,10 +883,15 @@ ollama ps
 
 # Restart Ollama
 sudo systemctl restart ollama
-3. Memory Issues
-Problem: OutOfMemoryError during ingestion
-Solutions:
-python# Reduce batch size
+```
+
+#### 3. Memory Issues
+
+**Problem:** `OutOfMemoryError` during ingestion
+
+**Solutions:**
+```python
+# Reduce batch size
 BATCH_SIZE = 10  # Instead of processing all chunks at once
 
 # Implement streaming ingestion
@@ -741,10 +900,15 @@ async def stream_ingest(chunks):
         batch = chunks[i:i+BATCH_SIZE]
         vectors = await embed_many(batch)
         repo.insert_chunks(vectors)
-4. Performance Issues
-Problem: Slow search responses
-Debugging:
-pythonimport time
+```
+
+#### 4. Performance Issues
+
+**Problem:** Slow search responses
+
+**Debugging:**
+```python
+import time
 
 def debug_select_context(namespace: str, q_vec: List[float], top_k: int):
     start = time.time()
@@ -773,12 +937,21 @@ def debug_select_context(namespace: str, q_vec: List[float], top_k: int):
     print(f"Total time: {total_time:.2f}s")
     
     return sorted(scored, key=lambda x: x[0], reverse=True)[:top_k]
-Debug Mode
+```
+
+### Debug Mode
+
 Enable debug logging:
-bashexport LOG_LEVEL=DEBUG
+
+```bash
+export LOG_LEVEL=DEBUG
 uvicorn main:app --log-level debug --reload
-Performance Profiling
-python# Add to main.py
+```
+
+### Performance Profiling
+
+```python
+# Add to main.py
 import cProfile
 import pstats
 
@@ -797,16 +970,20 @@ async def profile_operation(operation: str):
         
         # Return top functions
         return stats.print_stats(10)
-🤝 Contributing
+```
 
-Fork the repository
-Create a feature branch: git checkout -b feature/amazing-feature
-Commit your changes: git commit -m 'Add amazing feature'
-Push to the branch: git push origin feature/amazing-feature
-Open a Pull Request
+## 🤝 Contributing
 
-Development Setup
-bash# Install development dependencies
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit your changes: `git commit -m 'Add amazing feature'`
+4. Push to the branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
+
+### Development Setup
+
+```bash
+# Install development dependencies
 pip install -r requirements-dev.txt
 
 # Run tests
@@ -821,3 +998,21 @@ mypy main.py
 
 # Linting
 flake8 main.py
+```
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- [Ollama](https://ollama.com/) - Local LLM inference
+- [Apache Cassandra](https://cassandra.apache.org/) - Distributed database
+- [FastAPI](https://fastapi.tiangolo.com/) - Modern Python web framework
+- [Nomic AI](https://www.nomic.ai/) - Embedding models
+
+---
+
+**Built with ❤️ for the RAG community**
+
+For questions and support, please open an issue on GitHub.
