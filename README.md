@@ -1,10 +1,8 @@
 # Donut-Flappy-LLM
-DonutFlappyLLM is an ai agent with cassandra rag implementation. Developed for B2B company chatting.
+DonutFlappyLLM🍩 is an ai agent with cassandra rag implementation. Developed for B2B company chatting.
 
 A production-ready RAG (Retrieval-Augmented Generation) API built with FastAPI, Apache Cassandra, and Ollama for scalable document ingestion, semantic search, and AI-powered chat capabilities.
 🌟 Features
-
-![Donuts are good](images/donutflappyllm.logo.jpg)
 
 Document Ingestion: Upload and process documents with automatic chunking and embedding
 Semantic Search: Vector-based similarity search using cosine similarity
